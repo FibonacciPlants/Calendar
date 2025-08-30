@@ -1,5 +1,50 @@
 timezone: America/Chicago
 
+sources:
+  # Arenas & stadiums
+  - type: aac
+    url: "https://www.americanairlinescenter.com/events"   # American Airlines Center events list
+    category: music
+
+  - type: att_stadium
+    url: "https://attstadium.com/events/"                   # AT&T Stadium events
+    category: sports
+
+  # Live Nation venues
+  - type: livenation
+    url: "https://www.livenation.com/venue/KovZpZAEAFeA/dos-equis-pavilion-events"
+    venue: "Dos Equis Pavilion, Dallas"
+    category: music
+
+  - type: livenation
+    url: "https://www.livenation.com/venue/KovZ917AxY0/the-echo-lounge-music-hall-events"
+    venue: "The Echo Lounge & Music Hall, Dallas"
+    category: music
+
+  # Texas Trust CU Theatre (official site)
+  - type: livenation
+    url: "https://texastrustcutheatre.com/events/"
+    venue: "Texas Trust CU Theatre, Grand Prairie"
+    category: music
+
+  # Fair Park (citywide festivals & stadium)
+  - type: fair_park
+    url: "https://www.fairparkdallas.com/events"
+    category: festivals
+
+  # Klyde Warren Park (signature nights & large programs)
+  - type: klyde
+    url: "https://www.klydewarrenpark.org/events-programming"
+    category: festivals
+
+events:
+  # keep your curated items here (they’ll be merged with scraped results)
+  sports: []
+  music: []
+  conferences: []
+  arts: []
+  festivals: []
+  specials: []
 events:
   sports:
     - summary: "Dallas Stars Home Opener vs Minnesota Wild (NHL)"
