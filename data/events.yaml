@@ -1,0 +1,49 @@
+timezone: America/Chicago
+
+events:
+  sports:
+    - summary: "Dallas Stars Home Opener vs Minnesota Wild (NHL)"
+      start: "2025-10-14T20:30"
+      end:   "2025-10-14T23:00"
+      location: "American Airlines Center, Dallas"
+      description: "NHL.com schedule"
+
+  music:
+    - summary: "Twenty One Pilots — The Clancy Tour: Breach 2025"
+      start: "2025-10-20T20:00"
+      end:   "2025-10-20T22:30"
+      location: "Dos Equis Pavilion, Dallas"
+      description: "Venue listing"
+
+  conferences:
+    - summary: "Impressions Expo Dallas — Day 1"
+      start: "2025-10-01T09:00"
+      end:   "2025-10-01T17:00"
+      location: "Kay Bailey Hutchison Convention Center, Dallas"
+      description: "Official event site"
+
+  arts:
+    - summary: "Dallas Symphony — Harry Potter & the Order of the Phoenix™ in Concert"
+      start: "2025-09-04T19:30"
+      end:   "2025-09-04T22:30"
+      location: "Meyerson Symphony Center, Dallas"
+      description: "DSO season calendar"
+
+  festivals:
+    - summary: "State Fair of Texas — Opening Day"
+      start: "2025-09-26T10:00"
+      end:   "2025-09-26T22:00"
+      location: "Fair Park, Dallas"
+      description: "BigTex.com"
+    - summary: "State Fair of Texas — Closing Day"
+      start: "2025-10-19T10:00"
+      end:   "2025-10-19T22:00"
+      location: "Fair Park, Dallas"
+      description: "BigTex.com"
+
+  specials:
+    - summary: "FIFA World Cup 2026 — Group Stage Match (AT&T Stadium)"
+      start: "2026-06-14T12:00"
+      end:   "2026-06-14T16:00"
+      location: "AT&T Stadium, Arlington"
+      description: "Dallas host-city match"
