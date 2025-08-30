@@ -1,16 +1,18 @@
 timezone: America/Chicago
 
+# Auto sources — arenas, stadiums, Live Nation venues, neighborhoods, parks, fairs.
+# NOTE: These URLs are the public "events" pages. If any site changes layout, the scraper will skip with a warning.
 sources:
-  # Arenas & stadiums
+  # ----- ARENAS / STADIUMS -----
   - type: aac
-    url: "https://www.americanairlinescenter.com/events"   # American Airlines Center events list
-    category: music
+    url: "https://www.americanairlinescenter.com/events"
+    category: music        # includes big concerts + some games that AAC lists
 
   - type: att_stadium
-    url: "https://attstadium.com/events/"                   # AT&T Stadium events
-    category: sports
+    url: "https://attstadium.com/events/"
+    category: sports       # includes Cowboys & major stadium shows
 
-  # Live Nation venues
+  # ----- LIVE NATION DALLAS -----
   - type: livenation
     url: "https://www.livenation.com/venue/KovZpZAEAFeA/dos-equis-pavilion-events"
     venue: "Dos Equis Pavilion, Dallas"
@@ -21,74 +23,169 @@ sources:
     venue: "The Echo Lounge & Music Hall, Dallas"
     category: music
 
-  # Texas Trust CU Theatre (official site)
+  - type: livenation
+    url: "https://www.livenation.com/venue/KovZpZAJAAIA/house-of-blues-dallas-events"
+    venue: "House of Blues Dallas"
+    category: music
+
   - type: livenation
     url: "https://texastrustcutheatre.com/events/"
     venue: "Texas Trust CU Theatre, Grand Prairie"
     category: music
 
-  # Fair Park (citywide festivals & stadium)
-  - type: fair_park
-    url: "https://www.fairparkdallas.com/events"
-    category: festivals
+  # ----- AXS VENUES (Deep Ellum) -----
+  - type: axs
+    url: "https://www.axs.com/venues/110820/the-factory-in-deep-ellum-tickets"
+    venue: "The Factory in Deep Ellum"
+    category: music
 
-  # Klyde Warren Park (signature nights & large programs)
+  - type: axs
+    url: "https://www.axs.com/venues/111224/the-studio-at-the-factory-tickets"
+    venue: "The Studio at The Factory (Deep Ellum)"
+    category: music
+
+  # ----- ARTS DISTRICT & MAJORS (generic selectors; times default to 7:00 PM if missing) -----
+  - type: selector
+    url: "https://www.attpac.org/on-sale"
+    container: ".event"
+    title: "h3, .title"
+    datetime: "time, .date"
+    dt_attr: "datetime"
+    venue: "AT&T Performing Arts Center (Winspear/Wyly)"
+    category: arts
+    default_time: "19:00"
+
+  - type: selector
+    url: "https://www.dallassymphony.org/tickets/"
+    container: "article, .event"
+    title: "h3, .event-title, h2"
+    datetime: "time, .event-date"
+    dt_attr: "datetime"
+    venue: "Meyerson Symphony Center (Dallas Symphony)"
+    category: arts
+    default_time: "19:30"
+
+  - type: selector
+    url: "https://dallastheatercenter.org/productions/"
+    container: "article, .production, .show"
+    title: "h2, h3, .title"
+    datetime: "time, .date"
+    dt_attr: "datetime"
+    venue: "Dallas Theater Center (Wyly/Kalita)"
+    category: arts
+    default_time: "19:30"
+
+  # ----- NEIGHBORHOODS & PARKS -----
+  - type: selector
+    url: "https://deepellumtexas.com/events/"
+    container: "article, .event, .card"
+    title: "h2, h3, .title"
+    datetime: "time, .date"
+    dt_attr: "datetime"
+    venue: "Deep Ellum"
+    category: festivals
+    default_time: "18:00"
+
+  - type: selector
+    url: "https://bishopartsdistrict.com/events/"
+    container: "article, .event, .tribe-events-calendar-list__event"
+    title: "h2, h3, .tribe-events-calendar-list__event-title"
+    datetime: "time, .tribe-events-calendar-list__event-date"
+    dt_attr: "datetime"
+    venue: "Bishop Arts District"
+    category: festivals
+    default_time: "18:00"
+
   - type: klyde
     url: "https://www.klydewarrenpark.org/events-programming"
     category: festivals
 
+  - type: fair_park
+    url: "https://www.fairparkdallas.com/events"
+    category: festivals
+
+  # ----- CONVENTIONS / MARKETS -----
+  - type: selector
+    url: "https://www.dallasconventioncenter.com/events"
+    container: "article, .event, .card"
+    title: "h2, h3, .title"
+    datetime: "time, .date"
+    dt_attr: "datetime"
+    venue: "Kay Bailey Hutchison Convention Center"
+    category: conferences
+    default_time: "09:00"
+
+  - type: selector
+    url: "https://dallasmarkethall.com/events"
+    container: "article, .event, .card"
+    title: "h2, h3, .title"
+    datetime: "time, .date"
+    dt_attr: "datetime"
+    venue: "Dallas Market Hall"
+    category: conferences
+    default_time: "09:00"
+
+  - type: selector
+    url: "https://dallasmarketcenter.com/calendar/"
+    container: ".event, article, .item"
+    title: "h2, h3, .title, .event-title"
+    datetime: "time, .event-date"
+    dt_attr: "datetime"
+    venue: "Dallas Market Center"
+    category: conferences
+    default_time: "09:00"
+
+  # ----- DOWNTOWN HOTELS (big conference hosts; generic selectors) -----
+  - type: selector
+    url: "https://www.omnihotels.com/hotels/dallas/dining-and-events/events"
+    container: "article, .event, .card"
+    title: "h2, h3, .title"
+    datetime: "time, .date"
+    dt_attr: "datetime"
+    venue: "Omni Dallas Hotel"
+    category: conferences
+    default_time: "09:00"
+
+  - type: selector
+    url: "https://www.marriott.com/en-us/hotels/daldh-sheraton-dallas-hotel/events/"
+    container: "article, .event, .card"
+    title: "h2, h3, .title"
+    datetime: "time, .date"
+    dt_attr: "datetime"
+    venue: "Sheraton Dallas"
+    category: conferences
+    default_time: "09:00"
+
+  - type: selector
+    url: "https://www.hilton.com/en/hotels/dfwanhh-hilton-anatole/hotel-info/events/"
+    container: "article, .event, .card"
+    title: "h2, h3, .title"
+    datetime: "time, .date"
+    dt_attr: "datetime"
+    venue: "Hilton Anatole"
+    category: conferences
+    default_time: "09:00"
+
+  - type: selector
+    url: "https://www.hyatt.com/en-US/hotel/texas/hyatt-regency-dallas/dfwdd/special-events"
+    container: "article, .event, .card"
+    title: "h2, h3, .title"
+    datetime: "time, .date"
+    dt_attr: "datetime"
+    venue: "Hyatt Regency Dallas"
+    category: conferences
+    default_time: "09:00"
+
 events:
-  # keep your curated items here (they’ll be merged with scraped results)
+  # You can keep curated items here; they’ll be merged and deduped.
   sports: []
   music: []
   conferences: []
   arts: []
   festivals: []
-  specials: []
-events:
-  sports:
-    - summary: "Dallas Stars Home Opener vs Minnesota Wild (NHL)"
-      start: "2025-10-14T20:30"
-      end:   "2025-10-14T23:00"
-      location: "American Airlines Center, Dallas"
-      description: "NHL.com schedule"
-
-  music:
-    - summary: "Twenty One Pilots — The Clancy Tour: Breach 2025"
-      start: "2025-10-20T20:00"
-      end:   "2025-10-20T22:30"
-      location: "Dos Equis Pavilion, Dallas"
-      description: "Venue listing"
-
-  conferences:
-    - summary: "Impressions Expo Dallas — Day 1"
-      start: "2025-10-01T09:00"
-      end:   "2025-10-01T17:00"
-      location: "Kay Bailey Hutchison Convention Center, Dallas"
-      description: "Official event site"
-
-  arts:
-    - summary: "Dallas Symphony — Harry Potter & the Order of the Phoenix™ in Concert"
-      start: "2025-09-04T19:30"
-      end:   "2025-09-04T22:30"
-      location: "Meyerson Symphony Center, Dallas"
-      description: "DSO season calendar"
-
-  festivals:
-    - summary: "State Fair of Texas — Opening Day"
-      start: "2025-09-26T10:00"
-      end:   "2025-09-26T22:00"
-      location: "Fair Park, Dallas"
-      description: "BigTex.com"
-    - summary: "State Fair of Texas — Closing Day"
-      start: "2025-10-19T10:00"
-      end:   "2025-10-19T22:00"
-      location: "Fair Park, Dallas"
-      description: "BigTex.com"
-
   specials:
-    - summary: "FIFA World Cup 2026 — Group Stage Match (AT&T Stadium)"
+    - summary: "FIFA World Cup 2026 — Match Window (host city activity)"
       start: "2026-06-14T12:00"
       end:   "2026-06-14T16:00"
-      location: "AT&T Stadium, Arlington"
-      description: "Dallas host-city match"
+      location: "AT&T Stadium / KBH Convention Center / Fair Park"
+      description: "Dallas host-city footprint"
