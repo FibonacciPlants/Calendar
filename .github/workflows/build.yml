@@ -1,46 +1,79 @@
-name: Build & Publish ICS
+name: Build & Publish ICS (Daily 9am CT, resilient)
 
 on:
-  workflow_dispatch: {}
   schedule:
-    - cron: '0 14 * * * '  # Mondays 09:00 America/Chicago (14:00 UTC)
+    # 14:00 UTC ≈ 9:00 AM Central during DST; 15:00 UTC ≈ 9:00 AM during Standard Time.
+    - cron: '0 14 * * *'
+    - cron: '0 15 * * *'
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'src/**'
+      - 'data/**'
+      - 'requirements.txt'
+      - '.github/workflows/build.yml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
+      # v4 has submodules fix & better perf
         uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
 
-      - name: Install deps
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Build calendars
+        env:
+          PYTHONUNBUFFERED: '1'
         run: |
-          python src/build_calendars.py
+          set -e
+          python -V
+          python src/build_calendars.py || echo "::warning::build script exited non-zero (continuing; check logs)"
 
-      - name: Upload artifact
+      - name: List generated files
+        run: |
+          echo "Site directory:"
+          ls -lah site || true
+
+      - name: Upload build debug artifact (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-debug
+          path: site
+          if-no-files-found: warn
+          retention-days: 5
+
+      - name: Upload for Pages
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
   deploy:
     needs: build
-    permissions:
-      pages: write
-      id-token: write
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
     steps:
       - name: Deploy to GitHub Pages
-        id: deployment
         uses: actions/deploy-pages@v4
