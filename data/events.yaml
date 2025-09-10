@@ -1,191 +1,106 @@
-timezone: America/Chicago
+name: Build & Publish ICS (Daily 9am CT, resilient)
 
-# Auto sources — arenas, stadiums, Live Nation venues, neighborhoods, parks, fairs.
-# NOTE: These URLs are the public "events" pages. If any site changes layout, the scraper will skip with a warning.
-sources:
-  # ----- ARENAS / STADIUMS -----
-  - type: aac
-    url: "https://www.americanairlinescenter.com/events"
-    category: music        # includes big concerts + some games that AAC lists
+on:
+  schedule:
+    # 9:00 AM Central year-round (handles DST by running at both 14:00 & 15:00 UTC)
+    - cron: '0 14 * * *'
+    - cron: '0 15 * * *'
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'src/**'
+      - 'data/**'
+      - 'requirements.txt'
+      - '.github/workflows/build.yml'
 
-  - type: att_stadium
-    url: "https://attstadium.com/events/"
-    category: sports       # includes Cowboys & major stadium shows
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
-  # ----- LIVE NATION DALLAS -----
-  - type: livenation
-    url: "https://www.livenation.com/venue/KovZpZAEAFeA/dos-equis-pavilion-events"
-    venue: "Dos Equis Pavilion, Dallas"
-    category: music
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
-  - type: livenation
-    url: "https://www.livenation.com/venue/KovZ917AxY0/the-echo-lounge-music-hall-events"
-    venue: "The Echo Lounge & Music Hall, Dallas"
-    category: music
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  - type: livenation
-    url: "https://www.livenation.com/venue/KovZpZAJAAIA/house-of-blues-dallas-events"
-    venue: "House of Blues Dallas"
-    category: music
+      - name: Show repo layout (sanity check)
+        run: |
+          pwd
+          ls -la
+          echo "---- top-level dirs ----"
+          find . -maxdepth 2 -type d | sort
 
-  - type: livenation
-    url: "https://texastrustcutheatre.com/events/"
-    venue: "Texas Trust CU Theatre, Grand Prairie"
-    category: music
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
 
-  # ----- AXS VENUES (Deep Ellum) -----
-  - type: axs
-    url: "https://www.axs.com/venues/110820/the-factory-in-deep-ellum-tickets"
-    venue: "The Factory in Deep Ellum"
-    category: music
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-  - type: axs
-    url: "https://www.axs.com/venues/111224/the-studio-at-the-factory-tickets"
-    venue: "The Studio at The Factory (Deep Ellum)"
-    category: music
+      - name: Build calendars (don’t fail the job)
+        env:
+          PYTHONUNBUFFERED: '1'
+        run: |
+          set -x
+          # Always ensure site/ exists so later steps don't fail
+          mkdir -p site
+          # Run builder; if it errors, keep going so we can still deploy an index
+          python src/build_calendars.py || echo "::warning:: build script exited non-zero; check logs (continuing)"
 
-  # ----- ARTS DISTRICT & MAJORS (generic selectors; times default to 7:00 PM if missing) -----
-  - type: selector
-    url: "https://www.attpac.org/on-sale"
-    container: ".event"
-    title: "h3, .title"
-    datetime: "time, .date"
-    dt_attr: "datetime"
-    venue: "AT&T Performing Arts Center (Winspear/Wyly)"
-    category: arts
-    default_time: "19:00"
+      - name: Generate simple index.html with ICS links
+        run: |
+          cat > site/index.html <<'HTML'
+          <!doctype html>
+          <meta charset="utf-8">
+          <title>DFW Influx Calendars</title>
+          <h1>DFW Influx Calendars</h1>
+          <p>Tap to subscribe/import:</p>
+          <ul>
+            <li><a href="./sports.ics">Sports</a></li>
+            <li><a href="./music.ics">Music</a></li>
+            <li><a href="./conferences.ics">Conferences</a></li>
+            <li><a href="./arts.ics">Arts</a></li>
+            <li><a href="./festivals.ics">Festivals</a></li>
+            <li><a href="./specials_worldcup.ics">Specials (World Cup)</a></li>
+            <li><a href="./master.ics">Master (all categories)</a></li>
+          </ul>
+          HTML
 
-  - type: selector
-    url: "https://www.dallassymphony.org/tickets/"
-    container: "article, .event"
-    title: "h3, .event-title, h2"
-    datetime: "time, .event-date"
-    dt_attr: "datetime"
-    venue: "Meyerson Symphony Center (Dallas Symphony)"
-    category: arts
-    default_time: "19:30"
+      - name: List generated files
+        run: |
+          echo "---- site/ ----"
+          ls -lah site || true
 
-  - type: selector
-    url: "https://dallastheatercenter.org/productions/"
-    container: "article, .production, .show"
-    title: "h2, h3, .title"
-    datetime: "time, .date"
-    dt_attr: "datetime"
-    venue: "Dallas Theater Center (Wyly/Kalita)"
-    category: arts
-    default_time: "19:30"
+      - name: Upload debug artifact (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-debug
+          path: site
+          if-no-files-found: warn
+          retention-days: 5
 
-  # ----- NEIGHBORHOODS & PARKS -----
-  - type: selector
-    url: "https://deepellumtexas.com/events/"
-    container: "article, .event, .card"
-    title: "h2, h3, .title"
-    datetime: "time, .date"
-    dt_attr: "datetime"
-    venue: "Deep Ellum"
-    category: festivals
-    default_time: "18:00"
+      - name: Upload for Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
 
-  - type: selector
-    url: "https://bishopartsdistrict.com/events/"
-    container: "article, .event, .tribe-events-calendar-list__event"
-    title: "h2, h3, .tribe-events-calendar-list__event-title"
-    datetime: "time, .tribe-events-calendar-list__event-date"
-    dt_attr: "datetime"
-    venue: "Bishop Arts District"
-    category: festivals
-    default_time: "18:00"
-
-  - type: klyde
-    url: "https://www.klydewarrenpark.org/events-programming"
-    category: festivals
-
-  - type: fair_park
-    url: "https://www.fairparkdallas.com/events"
-    category: festivals
-
-  # ----- CONVENTIONS / MARKETS -----
-  - type: selector
-    url: "https://www.dallasconventioncenter.com/events"
-    container: "article, .event, .card"
-    title: "h2, h3, .title"
-    datetime: "time, .date"
-    dt_attr: "datetime"
-    venue: "Kay Bailey Hutchison Convention Center"
-    category: conferences
-    default_time: "09:00"
-
-  - type: selector
-    url: "https://dallasmarkethall.com/events"
-    container: "article, .event, .card"
-    title: "h2, h3, .title"
-    datetime: "time, .date"
-    dt_attr: "datetime"
-    venue: "Dallas Market Hall"
-    category: conferences
-    default_time: "09:00"
-
-  - type: selector
-    url: "https://dallasmarketcenter.com/calendar/"
-    container: ".event, article, .item"
-    title: "h2, h3, .title, .event-title"
-    datetime: "time, .event-date"
-    dt_attr: "datetime"
-    venue: "Dallas Market Center"
-    category: conferences
-    default_time: "09:00"
-
-  # ----- DOWNTOWN HOTELS (big conference hosts; generic selectors) -----
-  - type: selector
-    url: "https://www.omnihotels.com/hotels/dallas/dining-and-events/events"
-    container: "article, .event, .card"
-    title: "h2, h3, .title"
-    datetime: "time, .date"
-    dt_attr: "datetime"
-    venue: "Omni Dallas Hotel"
-    category: conferences
-    default_time: "09:00"
-
-  - type: selector
-    url: "https://www.marriott.com/en-us/hotels/daldh-sheraton-dallas-hotel/events/"
-    container: "article, .event, .card"
-    title: "h2, h3, .title"
-    datetime: "time, .date"
-    dt_attr: "datetime"
-    venue: "Sheraton Dallas"
-    category: conferences
-    default_time: "09:00"
-
-  - type: selector
-    url: "https://www.hilton.com/en/hotels/dfwanhh-hilton-anatole/hotel-info/events/"
-    container: "article, .event, .card"
-    title: "h2, h3, .title"
-    datetime: "time, .date"
-    dt_attr: "datetime"
-    venue: "Hilton Anatole"
-    category: conferences
-    default_time: "09:00"
-
-  - type: selector
-    url: "https://www.hyatt.com/en-US/hotel/texas/hyatt-regency-dallas/dfwdd/special-events"
-    container: "article, .event, .card"
-    title: "h2, h3, .title"
-    datetime: "time, .date"
-    dt_attr: "datetime"
-    venue: "Hyatt Regency Dallas"
-    category: conferences
-    default_time: "09:00"
-
-events:
-  # You can keep curated items here; they’ll be merged and deduped.
-  sports: []
-  music: []
-  conferences: []
-  arts: []
-  festivals: []
-  specials:
-    - summary: "FIFA World Cup 2026 — Match Window (host city activity)"
-      start: "2026-06-14T12:00"
-      end:   "2026-06-14T16:00"
-      location: "AT&T Stadium / KBH Convention Center / Fair Park"
-      description: "Dallas host-city footprint"
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
