@@ -3,7 +3,7 @@ name: Build & Publish ICS
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: '0 14 * * 1'  # Mondays 09:00 America/Chicago (14:00 UTC)
+    - cron: '0 14 * * * '  # Mondays 09:00 America/Chicago (14:00 UTC)
 
 jobs:
   build:
